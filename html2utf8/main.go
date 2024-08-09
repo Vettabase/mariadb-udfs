@@ -6,7 +6,7 @@ package main
 // #include <stdlib.h>
 // #include <string.h>
 // #include <mysql.h>
-// #cgo CFLAGS: -DMYSQL_DYNAMIC_PLUGIN -DENVIRONMENT=0 -I/usr/include/mariadb -I/usr/include/mariadb/mysql -fno-omit-frame-pointer
+// #cgo CFLAGS: -DENVIRONMENT=0 -I/usr/include/mariadb -I/usr/include/mariadb/mysql -fno-omit-frame-pointer
 import "C"
 import "html"
 
