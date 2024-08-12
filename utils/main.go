@@ -11,7 +11,9 @@ package main
 // #cgo CFLAGS: -DENVIRONMENT=0 -I/usr/include/mariadb -I/usr/include/mariadb/mysql -fno-omit-frame-pointer
 import "C"
 import (
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -31,11 +33,37 @@ func pathDelete(p string) bool {
 	}
 
 	err := os.Remove(p)
+	return err == nil
+}
+
+func gzipFile(p string) bool {
+	if !pathExists(p) {
+		return false
+	}
+
+	file, err := os.Open(p)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	gFileName := fmt.Sprintf("%s.gz", p)
+	gFile, err := os.Create(gFileName)
+	if err != nil {
+		return false
+	}
+	defer gFile.Close()
+
+	gWriter := gzip.NewWriter(gFile)
+	defer gWriter.Close()
+
+	_, err = io.Copy(gWriter, file)
 	if err != nil {
 		return false
 	}
 
-	return true
+	return pathExists(gFileName)
+
 }
 
 func readProcStat(p string) (procStats string, procLen uint64) {
@@ -81,21 +109,59 @@ func bytesfree_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.int
 }
 
 //export bytesfree
-func bytesfree(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64, isNull *C.char, message *C.char) *C.char {
+func bytesfree(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64, isNull *C.char, message *C.char) uint64 {
 	pathStr := C.GoString(*args.args)
 	var stat syscall.Statfs_t
 
 	if err := syscall.Statfs(pathStr, &stat); err != nil {
 		*length = uint64(0)
-		return C.CString("")
+		return 0
 	}
 
 	free := uint64(stat.Bavail) * uint64(stat.Bsize)
 	freeStr := strconv.FormatUint(free, 10)
 	freeStrLen := len(freeStr)
 	*length = uint64(freeStrLen)
+	return free
+}
 
-	return C.CString(freeStr)
+//export deletefile_init
+func deletefile_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.int {
+	if args.arg_count == 0 {
+		msg := "Missing directory path"
+		C.strcpy(message, C.CString(msg))
+		return 1
+	}
+	return 0
+}
+
+//export deletefile
+func deletefile(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64, isNull *C.char, message *C.char) C.int {
+	pathStr := C.GoString(*args.args)
+	if pathDelete(pathStr) {
+		return 0
+	}
+	return 1
+}
+
+//export gzipfile_init
+func gzipfile_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.int {
+	if args.arg_count == 0 {
+		msg := "Missing directory path"
+		C.strcpy(message, C.CString(msg))
+		return 1
+	}
+	return 0
+}
+
+//export gzipfile
+func gzipfile(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64, isNull *C.char, message *C.char) C.int {
+	pathStr := C.GoString(*args.args)
+	if gzipFile(pathStr) {
+		return 0
+	}
+
+	return 1
 }
 
 //export readproc_init
