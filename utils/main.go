@@ -20,6 +20,12 @@ import (
 	"syscall"
 )
 
+const tmpDir string = "/tmp/"
+
+func tmpOnly(p string) bool {
+	return p[:5] == tmpDir
+}
+
 func pathExists(p string) bool {
 	if _, err := os.Stat(p); os.IsExist(err) {
 		return false
@@ -28,6 +34,10 @@ func pathExists(p string) bool {
 }
 
 func pathDelete(p string) bool {
+	if !tmpOnly(p) {
+		return false
+	}
+
 	if !pathExists(p) {
 		return false
 	}
@@ -37,6 +47,10 @@ func pathDelete(p string) bool {
 }
 
 func gzipFile(p string) bool {
+	if !tmpOnly(p) {
+		return false
+	}
+
 	if !pathExists(p) {
 		return false
 	}
