@@ -11,3 +11,5 @@ Build and install:
 Usage:
 
     MariaDB> SELECT html2utf8(my_field);
+
+The `main.py` script demonstrates re-using the same code again from Python.

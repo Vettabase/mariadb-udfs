@@ -20,3 +20,19 @@ install:
 	sudo cp $(BUILD_PATH) $(PLUGIN_PATH)
 	mariadb -e "DROP FUNCTION IF EXISTS readproc;"
 	mariadb -e "CREATE FUNCTION readproc RETURNS STRING SONAME '$(BIN_NAME)';"
+
+
+	mariadb -e "DROP FUNCTION IF EXISTS gzipfile;"
+	mariadb -e "CREATE FUNCTION gzipfile RETURNS INT SONAME '$(BIN_NAME)';"
+
+
+	mariadb -e "DROP FUNCTION IF EXISTS deletefile;"
+	mariadb -e "CREATE FUNCTION deletefile RETURNS INT SONAME '$(BIN_NAME)';"
+
+
+	mariadb -e "DROP FUNCTION IF EXISTS fileexists;"
+	mariadb -e "CREATE FUNCTION fileexists RETURNS INT SONAME '$(BIN_NAME)';"
+
+
+	mariadb -e "DROP FUNCTION IF EXISTS bytesfree;"
+	mariadb -e "CREATE FUNCTION bytesfree RETURNS DOUBLE SONAME '$(BIN_NAME)';"

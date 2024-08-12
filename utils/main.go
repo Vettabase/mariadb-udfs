@@ -123,26 +123,45 @@ func bytesfree_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.int
 }
 
 //export bytesfree
-func bytesfree(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64, isNull *C.char, message *C.char) uint64 {
+func bytesfree(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64, isNull *C.char, message *C.char) float64 {
 	pathStr := C.GoString(*args.args)
 	var stat syscall.Statfs_t
 
 	if err := syscall.Statfs(pathStr, &stat); err != nil {
 		*length = uint64(0)
-		return 0
+		return -1
 	}
 
 	free := uint64(stat.Bavail) * uint64(stat.Bsize)
 	freeStr := strconv.FormatUint(free, 10)
 	freeStrLen := len(freeStr)
 	*length = uint64(freeStrLen)
-	return free
+	return float64(free)
+}
+
+//export fileexists_init
+func fileexists_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.int {
+	if args.arg_count == 0 {
+		msg := "Missing path"
+		C.strcpy(message, C.CString(msg))
+		return 1
+	}
+	return 0
+}
+
+//export fileexists
+func fileexists(initid *C.UDF_INIT, args *C.UDF_ARGS, result *C.char, length *uint64, isNull *C.char, message *C.char) C.int {
+	pathStr := C.GoString(*args.args)
+	if pathExists(pathStr) {
+		return 0
+	}
+	return 1
 }
 
 //export deletefile_init
 func deletefile_init(initid *C.UDF_INIT, args *C.UDF_ARGS, message *C.char) C.int {
 	if args.arg_count == 0 {
-		msg := "Missing directory path"
+		msg := "Missing path"
 		C.strcpy(message, C.CString(msg))
 		return 1
 	}
